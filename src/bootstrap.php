@@ -165,7 +165,7 @@ function page_header(string $title, string $subtitle): void
 <meta name="robots" content="noindex, nofollow">
 <title><?= h($title) ?> – <?= h(cfg('event_name')) ?> – STAFERO e.V.</title>
 <link rel="icon" href="assets/stafero-logo.png">
-<link rel="stylesheet" href="assets/style.css?v=6">
+<link rel="stylesheet" href="assets/style.css?v=7">
 </head>
 <body>
 <header class="site-header">

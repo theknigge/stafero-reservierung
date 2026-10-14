@@ -124,8 +124,14 @@ page_header('Tischreservierung', cfg('event_name'));
             <strong><?= h(display_name($res)) ?></strong> · <?= h(plural($res['seats'], 'Platz', 'Plätze')) ?><br>
             Tisch <?= h(alloc_label($res['alloc'])) ?>
           </p>
-          <p class="hint">Mit diesem Link könnt ihr die Reservierung später wieder öffnen:<br>
-            <a href="<?= h(change_url($res['code'])) ?>"><?= h(change_url($res['code'])) ?></a></p>
+          <?php // Kein <a>: Der Link zeigt auf genau diese Seite, ein Klick würde nur neu laden. Zum Weitergeben/Speichern kopieren. ?>
+          <label for="change-link" class="hint">Euer persönlicher Link zum Ändern (steht auch in der Bestätigungsmail):</label>
+          <div class="seat-row copy-row">
+            <input id="change-link" type="text" readonly value="<?= h(change_url($res['code'])) ?>" onfocus="this.select()">
+            <button type="button" class="dark" onclick="const i=document.getElementById('change-link'); i.select();
+              (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).catch(() => document.execCommand('copy'));
+              this.textContent='Kopiert ✓';">Link kopieren</button>
+          </div>
         <?php else: ?>
           <h2>Plätze reservieren</h2>
         <?php endif; ?>

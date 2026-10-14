@@ -11,10 +11,18 @@ function mail_enabled(): bool
     return cfg('smtp_host') !== '' && cfg('mail_from') !== '';
 }
 
+/**
+ * Öffentliche Adresse der Seite, immer absolut mit Schema – sonst wäre der Änderungslink relativ und
+ * in Mails nicht klickbar. "reservierung.stafero.de" aus APP_URL wird zu "https://reservierung.stafero.de/".
+ */
 function app_url(): string
 {
-    if (cfg('app_url') !== '') {
-        return rtrim(cfg('app_url'), '/') . '/';
+    $url = trim(cfg('app_url'));
+    if ($url !== '' && !preg_match('#^https?://#i', $url)) {
+        $url = 'https://' . ltrim($url, '/');
+    }
+    if ($url !== '' && filter_var($url, FILTER_VALIDATE_URL)) {
+        return rtrim($url, '/') . '/';
     }
     $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
     return (is_https() ? 'https' : 'http') . '://' . $host . '/';
@@ -116,9 +124,12 @@ function reservation_mail(array $res, string $type): array
         . '<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-left:6px solid #ffed00;padding-left:14px">' . $trs . '</table>'
         . ($notice !== '' ? '<p style="' . $font . 'margin:0 0 20px;padding:12px 14px;background-color:#fff7a6;font-weight:bold">' . h($notice) . '</p>' : '')
         . '<p style="' . $font . 'margin:0 0 16px">' . h($footer) . '</p>'
-        . '<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 20px"><tr><td style="background-color:#000;padding:12px 22px">'
-        . '<a href="' . h($url) . '" style="font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none">'
+        . '<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 12px"><tr><td style="background-color:#000">'
+        . '<a href="' . h($url) . '" target="_blank" style="display:inline-block;padding:12px 22px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none">'
         . ($type === 'canceled' ? 'Zur Tischreservierung' : 'Reservierung ansehen') . '</a></td></tr></table>'
+        // Link zusätzlich ausgeschrieben – falls ein Mailprogramm den Button nicht anzeigt
+        . '<p style="font-family:Arial,sans-serif;font-size:12px;line-height:18px;color:#616161;margin:0 0 20px;word-break:break-all">'
+        . '<a href="' . h($url) . '" target="_blank" style="color:#616161">' . h($url) . '</a></p>'
         . '<p style="' . $font . 'margin:0 0 16px">Bei Fragen erreicht ihr uns unter <a href="mailto:' . h($contact) . '" style="color:#000">' . h($contact) . '</a>.</p>'
         . '<p style="' . $font . 'margin:0">Wir freuen uns auf euch!<br>Euer STAFERO e.V.</p>';
 
