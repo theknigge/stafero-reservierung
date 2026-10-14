@@ -94,7 +94,12 @@ function reservation_mail(array $res, string $type): array
 
     $rows = $type === 'canceled'
         ? [['Name', display_name($res)], ['Plätze', (string) $res['seats']]]
-        : [['Name', display_name($res)], ['Plätze', (string) $res['seats']], ['Tisch', alloc_label($res['alloc'])]];
+        : [
+            ['Veranstaltung', $event], ['Datum', cfg('event_date')], ['Einlass', cfg('event_doors')], ['Beginn', cfg('event_start')],
+            ['Name', display_name($res)], ['Plätze', (string) $res['seats']], ['Tisch', alloc_label($res['alloc'])],
+        ];
+    $ticketUrl = cfg('ticket_url');
+    $ticketLine = 'Eure Tickets bekommt ihr im Ticketshop:';
 
     $notice = $type === 'canceled'
         ? ''
@@ -111,6 +116,9 @@ function reservation_mail(array $res, string $type): array
     if ($notice !== '') {
         $text .= "\n$notice\n";
     }
+    if ($type !== 'canceled') {
+        $text .= "\n$ticketLine $ticketUrl\n";
+    }
     $text .= "\n$footer\n$url\n\nBei Fragen erreicht ihr uns unter $contact.\n\nWir freuen uns auf euch!\nEuer STAFERO e.V.\n";
 
     $font = 'font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#000;';
@@ -123,6 +131,8 @@ function reservation_mail(array $res, string $type): array
         . '<p style="' . $font . 'margin:0 0 16px">' . h($intro) . '</p>'
         . '<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-left:6px solid #ffed00;padding-left:14px">' . $trs . '</table>'
         . ($notice !== '' ? '<p style="' . $font . 'margin:0 0 20px;padding:12px 14px;background-color:#fff7a6;font-weight:bold">' . h($notice) . '</p>' : '')
+        . ($type !== 'canceled' ? '<p style="' . $font . 'margin:0 0 16px">' . h($ticketLine) . ' <a href="' . h($ticketUrl)
+            . '" target="_blank" style="color:#000;font-weight:bold">' . h(ticket_label()) . '</a></p>' : '')
         . '<p style="' . $font . 'margin:0 0 16px">' . h($footer) . '</p>'
         . '<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 12px"><tr><td style="background-color:#000">'
         . '<a href="' . h($url) . '" target="_blank" style="display:inline-block;padding:12px 22px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none">'

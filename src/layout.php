@@ -273,11 +273,12 @@ function render_plan(array $occ, bool $interactive, array $titles = []): string
     return $o . '</svg>';
 }
 
-function plan_legend(bool $withMine = true): string
+function plan_legend(bool $withMine = true, bool $withPrevious = false): string
 {
     return '<ul class="legend">'
         . '<li><span class="sw sw-free"></span>frei</li>'
         . ($withMine ? '<li><span class="sw sw-mine"></span>eure Plätze</li>' : '')
+        . ($withPrevious ? '<li><span class="sw sw-previous"></span>bisher gespeichert</li>' : '')
         . '<li><span class="sw sw-taken"></span>belegt</li>'
         . '<li class="legend-note">1 Tisch = 4 Plätze</li>'
         . '</ul>';

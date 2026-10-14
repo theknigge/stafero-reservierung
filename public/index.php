@@ -90,6 +90,13 @@ page_header('Tischreservierung', cfg('event_name'));
 <main>
 <?php if ($flash): ?><p class="notice"><?= h($flash) ?></p><?php endif; ?>
 
+  <ul class="event-info">
+    <li><strong><?= h(cfg('event_date')) ?></strong></li>
+    <li>Einlass <?= h(cfg('event_doors')) ?></li>
+    <li>Beginn <?= h(cfg('event_start')) ?></li>
+    <li>Tickets: <a href="<?= h(cfg('ticket_url')) ?>" target="_blank" rel="noopener"><?= h(ticket_label()) ?></a></li>
+  </ul>
+
 <?php if (!$res): ?>
   <div class="intro">
     <?php if ($closed): ?>
@@ -112,7 +119,7 @@ page_header('Tischreservierung', cfg('event_name'));
       <h2 id="plan-title">Saalplan</h2>
       <?= $interactive ? '<p class="plan-hint">Tippt auf einen Tisch, um eure Gruppe dorthin zu setzen. Bei mehr als 4 Personen kommen die Nachbartische dazu.</p>' : '' ?>
       <div class="plan"><?= render_plan($occ, $interactive) ?></div>
-      <?= plan_legend($editable || $res !== null) ?>
+      <?= plan_legend($editable || $res !== null, $res !== null && $editable) ?>
     </section>
 
     <aside class="side">
@@ -121,9 +128,12 @@ page_header('Tischreservierung', cfg('event_name'));
           <p class="who">Reservierung #<?= $res['id'] ?></p>
           <h2>Eure Reservierung</h2>
           <p class="summary">
+            <span class="summary-label">Aktuell gespeichert</span><br>
             <strong><?= h(display_name($res)) ?></strong> · <?= h(plural($res['seats'], 'Platz', 'Plätze')) ?><br>
             Tisch <?= h(alloc_label($res['alloc'])) ?>
           </p>
+          <?php // plan.js zeigt hier an, ob die Auswahl im Plan von der gespeicherten Reservierung abweicht ?>
+          <p id="dirty-note" class="dirty-note" hidden aria-live="polite"></p>
           <?php // Kein <a>: Der Link zeigt auf genau diese Seite, ein Klick würde nur neu laden. Zum Weitergeben/Speichern kopieren. ?>
           <label for="change-link" class="hint">Euer persönlicher Link zum Ändern (steht auch in der Bestätigungsmail):</label>
           <div class="seat-row copy-row">
@@ -142,7 +152,10 @@ page_header('Tischreservierung', cfg('event_name'));
           <p class="hint">Der Reservierungszeitraum ist beendet, Änderungen sind nicht mehr möglich.
             Bei Fragen schreibt uns an <a href="mailto:<?= h(cfg('contact_email')) ?>"><?= h(cfg('contact_email')) ?></a>.</p>
         <?php else: ?>
-          <form id="res-form" method="post" action="./#res-form">
+          <form id="res-form" method="post" action="./#res-form"<?php if ($res): ?> data-saved="<?= h(json_encode([
+              'seats' => $res['seats'], 'alloc' => $res['alloc'], 'first_name' => $res['first_name'],
+              'last_name' => $res['last_name'], 'phone' => $res['phone'], 'email' => $res['email'],
+          ], JSON_UNESCAPED_UNICODE)) ?>"<?php endif; ?>>
             <?= csrf_field() ?>
             <label for="seats"><?= $res ? 'Anzahl Plätze' : 'Wie viele Plätze möchtet ihr reservieren?' ?></label>
             <div class="seat-row">
@@ -176,6 +189,7 @@ page_header('Tischreservierung', cfg('event_name'));
               <label for="email">E-Mail <span class="optional">(dorthin schicken wir die Bestätigung)</span></label>
               <input id="email" name="email" type="email" value="<?= h($form['email']) ?>" required maxlength="200" autocomplete="email">
               <button type="submit" name="action" value="save" id="save"><?= $res ? 'Änderungen speichern' : 'Verbindlich reservieren' ?></button>
+              <?php if ($res): ?><button type="button" id="discard" class="link-dark" hidden>Änderungen verwerfen</button><?php endif; ?>
             </div>
           </form>
         <?php endif; ?>
@@ -185,7 +199,7 @@ page_header('Tischreservierung', cfg('event_name'));
         <?php if ($res): ?>
           <button type="button" class="secondary" onclick="window.print()">Bestätigung drucken</button>
           <?php if (!$closed): ?>
-            <form method="post" action="./" onsubmit="return confirm('Reservierung wirklich stornieren? Die Plätze werden sofort wieder freigegeben.')">
+            <form method="post" action="./" data-once onsubmit="return confirm('Reservierung wirklich stornieren? Die Plätze werden sofort wieder freigegeben.')">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete">
               <button type="submit" class="secondary danger">Reservierung stornieren</button>
             </form>

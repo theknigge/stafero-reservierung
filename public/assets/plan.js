@@ -3,6 +3,29 @@
 // sofort neu verteilt. Die Rechnung entspricht auto_assign() in src/layout.php.
 // Die Zuteilung steht in den versteckten Feldern "alloc[A1]"; ohne JavaScript gilt der Vorschlag vom Server.
 (() => {
+  // Formulare nur einmal absenden (Doppelklick, ungeduldiges Nachklicken) – mit Lader auf dem Button
+  for (const f of document.querySelectorAll('form[data-once], #res-form')) {
+    f.addEventListener('submit', (e) => {
+      if (e.defaultPrevented) return; // z. B. Rückfrage beim Stornieren abgelehnt
+      const btn = e.submitter;
+      if (f.id === 'res-form' && btn?.id !== 'save') return; // "Vorschlagen" läuft ohne Absenden
+      if (f.dataset.sending) {
+        e.preventDefault();
+        return;
+      }
+      f.dataset.sending = '1';
+      if (btn) {
+        btn.classList.add('is-loading');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.textContent = f.id === 'res-form' ? 'Wird gespeichert …' : 'Bitte warten …';
+      }
+    });
+  }
+  // Zurück-Button (Seite aus dem Cache): Sperre wieder lösen
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) location.reload();
+  });
+
   const form = document.getElementById('res-form');
   if (!form) return;
 
@@ -30,6 +53,12 @@
   const tables = [...document.querySelectorAll('.plan .seat[data-unit]')].filter((t) => inputs.has(t.dataset.unit));
   const byUnit = new Map(tables.map((t) => [t.dataset.unit, t]));
   const room = (u) => Number(inputs.get(u).max);
+
+  // Gespeicherter Stand beim Bearbeiten einer Reservierung (null bei neuer Reservierung)
+  const saved = form.dataset.saved ? JSON.parse(form.dataset.saved) : null;
+  const note = document.getElementById('dirty-note');
+  const discardBtn = document.getElementById('discard');
+  const FIELDS = ['first_name', 'last_name', 'phone', 'email'];
 
   const val = (i) => Math.max(0, Math.min(Number(i.max), Math.floor(Number(i.value) || 0)));
   const target = () => Math.floor(Number(seatsInput.value) || 0);
@@ -103,6 +132,53 @@
       : `Verteilt: ${sum} von ${want} – tippt auf einen Tisch, um alle ${plural(want)} dort zu platzieren`;
     counter.classList.toggle('is-over', sum !== want);
     counter.classList.toggle('is-ok', sum === want);
+    syncDirty();
+  }
+
+  // --- Bearbeiten: Abweichung vom gespeicherten Stand anzeigen ---
+
+  const allocLabel = (a) => Object.entries(a).map(([u, n]) => `${u} (${n})`).join(', ') || '–';
+  const currentAlloc = () => Object.fromEntries([...inputs].map(([u, i]) => [u, val(i)]).filter(([, n]) => n > 0));
+  const sameAlloc = (a, b) => {
+    const ka = Object.keys(a);
+    return ka.length === Object.keys(b).length && ka.every((u) => a[u] === b[u]);
+  };
+  const tablesChanged = () => target() !== saved.seats || !sameAlloc(currentAlloc(), saved.alloc);
+  const fieldsChanged = () => FIELDS.some((f) => form.elements[f] && form.elements[f].value.trim() !== saved[f]);
+  const isDirty = () => saved !== null && (tablesChanged() || fieldsChanged());
+
+  function syncDirty() {
+    if (!saved) return;
+    for (const t of tables) t.classList.toggle('was-mine', (saved.alloc[t.dataset.unit] ?? 0) > 0);
+    const dirty = isDirty();
+    note.hidden = false;
+    note.classList.toggle('is-dirty', dirty);
+    note.classList.toggle('is-clean', !dirty);
+    if (!dirty) {
+      note.textContent = '✓ Alles gespeichert. Tippt auf einen Tisch, um eure Gruppe umzusetzen.';
+    } else if (tablesChanged()) {
+      note.textContent = `Noch nicht gespeichert! Neu ausgewählt: Tisch ${allocLabel(currentAlloc())} – `
+        + `reserviert ist weiterhin Tisch ${allocLabel(saved.alloc)}. Erst mit „Änderungen speichern“ wird umgebucht.`;
+    } else {
+      note.textContent = 'Noch nicht gespeichert! Eure Angaben wurden geändert – bitte mit „Änderungen speichern“ übernehmen.';
+    }
+    saveBtn.disabled = !dirty;
+    saveBtn.textContent = dirty ? 'Änderungen speichern' : 'Keine Änderungen zum Speichern';
+    discardBtn.hidden = !dirty;
+  }
+
+  if (saved) {
+    discardBtn.addEventListener('click', () => {
+      seatsInput.value = saved.seats;
+      for (const [u, i] of inputs) i.value = saved.alloc[u] ?? 0;
+      for (const f of FIELDS) if (form.elements[f]) form.elements[f].value = saved[f];
+      sync();
+    });
+    for (const f of FIELDS) form.elements[f]?.addEventListener('input', syncDirty);
+    // Warnung beim Verlassen mit ungespeicherten Änderungen
+    window.addEventListener('beforeunload', (e) => {
+      if (isDirty() && !form.dataset.sending) e.preventDefault();
+    });
   }
 
   /** Prüft die Anzahl; bei Fehler Hinweis zeigen und ins Feld springen. */

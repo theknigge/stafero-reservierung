@@ -16,6 +16,11 @@ Design wie [static.stafero.de/film](https://static.stafero.de/film/).
   Bestätigungsmail steht. **Nur** über diesen Link lässt sich eine Reservierung wieder öffnen – ein öffentliches Feld
   für den Code gibt es nicht. Ungültige Links werden wie Fehlversuche gezählt (max. 20 in 15 Minuten). Darüber lässt sich die Reservierung
   bis `DEADLINE` (Standard: 08.11.2026, 23:59 Uhr) ändern oder stornieren, danach nur noch ansehen.
+- Beim Bearbeiten zeigt die Seite den gespeicherten Stand („Aktuell gespeichert“) getrennt von der neuen Auswahl:
+  bisherige Tische sind im Plan rot gestrichelt, ein roter Hinweis meldet ungespeicherte Änderungen, „Änderungen
+  verwerfen“ setzt zurück, und beim Verlassen der Seite warnt der Browser. Speichern ist nur bei Änderungen möglich.
+- Speichern/Stornieren zeigt einen Lader und sendet nur einmal (kein doppeltes Speichern per Doppelklick).
+- Die gedruckte Bestätigung („Bestätigung drucken“) enthält weder Saalplan noch Änderungslink.
 - Gleichzeitige Buchungen: Der Vorschlag reserviert noch nichts. Beim Speichern prüft `db_save()` die freien Plätze in
   einer exklusiven SQLite-Transaktion (`BEGIN IMMEDIATE`), eine zweite Buchung wartet so lange. War jemand schneller,
   bekommt der Zweite sofort einen neuen Vorschlag angezeigt und muss nur noch einmal speichern.
@@ -52,6 +57,10 @@ Die E-Mail-Adresse ist Pflicht. Beim Anlegen, Ändern und Stornieren geht eine B
 optional mit Kopie an `MAIL_BCC`. Antworten gehen an `CONTACT_EMAIL`. Kann eine Mail nicht verschickt werden, bleibt die
 Reservierung trotzdem gespeichert; der Fehler steht im Container-Log (`mail: Versand an … fehlgeschlagen`).
 Ohne `SMTP_HOST` werden keine Mails verschickt.
+
+Seite und Bestätigungsmail zeigen Datum, Einlass und Beginn (`EVENT_DATE`, `EVENT_DOORS`, `EVENT_START`) und verlinken den
+Ticketshop (`TICKET_URL`, Standard: https://ball.stafero.de). Die Mail enthält außerdem den Hinweis, dass Reservierungen
+um 19 Uhr verfallen.
 
 Die Mails haben dasselbe Layout wie die übrigen STAFERO-Mails (Logo von static.stafero.de, schwarzer Footer mit
 Postfach, Impressum, Datenschutz und Feedback), siehe `mail_layout()` in `src/mail.php`.

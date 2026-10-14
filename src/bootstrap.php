@@ -24,6 +24,10 @@ function cfg(string $key): mixed
         $cfg = [
             'event_name'            => env('EVENT_NAME', 'STAFERO-Jubiläumsball'),
             'contact_email'         => env('CONTACT_EMAIL', 'reservierung@stafero.de'),
+            'event_date'            => env('EVENT_DATE', 'Sa, 21. November 2026'),
+            'event_doors'           => env('EVENT_DOORS', '18:30 Uhr'),
+            'event_start'           => env('EVENT_START', '19:30 Uhr'),
+            'ticket_url'            => env('TICKET_URL', 'https://ball.stafero.de'),
             'deadline'              => new DateTimeImmutable(env('DEADLINE', '2026-11-08 23:59:59')),
             'max_seats'             => max(MIN_SEATS, (int) env('MAX_SEATS', '20')),
             'admin_password'        => env('ADMIN_PASSWORD'),
@@ -141,6 +145,12 @@ function normalize_phone(string $raw): string
     return $p;
 }
 
+/** Ticketshop-Adresse ohne Schema für die Anzeige: "ball.stafero.de" */
+function ticket_label(): string
+{
+    return rtrim(preg_replace('#^https?://#i', '', cfg('ticket_url')), '/');
+}
+
 /** "Müller, Vanessa" – so steht der Name auf Schildern und Listen. */
 function display_name(array $res): string
 {
@@ -165,7 +175,7 @@ function page_header(string $title, string $subtitle): void
 <meta name="robots" content="noindex, nofollow">
 <title><?= h($title) ?> – <?= h(cfg('event_name')) ?> – STAFERO e.V.</title>
 <link rel="icon" href="assets/stafero-logo.png">
-<link rel="stylesheet" href="assets/style.css?v=7">
+<link rel="stylesheet" href="assets/style.css?v=10">
 </head>
 <body>
 <header class="site-header">
@@ -187,7 +197,7 @@ function page_footer(): void
   <a href="https://www.stadtfest-ronnenberg.de/impressum/">Impressum</a>
   <a href="https://www.stadtfest-ronnenberg.de/datenschutz/">Datenschutz</a>
 </footer>
-<script src="assets/plan.js?v=4" defer></script>
+<script src="assets/plan.js?v=5" defer></script>
 </body>
 </html>
 <?php
