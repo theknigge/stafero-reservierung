@@ -1,6 +1,7 @@
 <?php
 // Druckansichten für den Admin-Bereich (Browser → Drucken / Als PDF speichern):
-//   ?view=badges   ein A4-Schild (quer) pro Tisch mit allen Gruppen, z. B. "2× Müller, Vanessa"
+//   ?view=badges   ein A4-Schild (quer) pro Tisch mit allen Gruppen, z. B. "2× Müller, Vanessa";
+//                  gesperrte Tische nur mit "Reserviert" und Tischnummer
 //   ?view=plan     Übersichtsplan mit allen Tischnummern (A4 hoch)
 // Erwartet $reservations aus admin.php.
 
@@ -22,7 +23,12 @@ function badge_name_size(array $lines): string
 
 $sheets = [];
 if ($view === 'badges') {
-    foreach (table_occupancy($reservations) as $u => $rows) {
+    // Gesperrte Tische bekommen ein Schild nur mit "Reserviert" und Tischnummer
+    $byUnit = table_occupancy($reservations);
+    foreach (db_blocked_units($pdo) as $u) {
+        $byUnit[$u] = [];
+    }
+    foreach (sort_alloc($byUnit) as $u => $rows) {
         $sheets[] = [
             'unit'  => $u,
             'lines' => array_map(fn($row) => $row['count'] . '× ' . display_name($row['res']), $rows),
@@ -39,7 +45,7 @@ $title = $view === 'plan' ? 'Saalplan mit Tischnummern' : 'Reservierungsschilder
 <meta name="robots" content="noindex, nofollow">
 <title><?= h($title) ?> – <?= h(cfg('event_name')) ?></title>
 <link rel="icon" href="assets/stafero-logo.png">
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=5">
 <style>
   html, body { background:#d9d9d9; color:#000; }
   .print-bar { position:sticky; top:0; z-index:2; background:#000; color:#fff; padding:10px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
@@ -93,10 +99,14 @@ $title = $view === 'plan' ? 'Saalplan mit Tischnummern' : 'Reservierungsschilder
       <img class="logo" src="assets/stafero-logo.png" alt="STAFERO e.V.">
       <p class="label">Reserviert</p>
       <p class="table"><?= h($s['unit']) ?></p>
-      <ul class="names" style="font-size:<?= badge_name_size($s['lines']) ?>">
-        <?php foreach ($s['lines'] as $line): ?><li><?= h($line) ?></li><?php endforeach; ?>
-      </ul>
-      <p class="meta"><?= h(cfg('event_name')) ?> · Tisch <?= h($s['unit']) ?> · <?= h(plural($s['seats'], 'Platz', 'Plätze')) ?> reserviert</p>
+      <?php if ($s['lines']): ?>
+        <ul class="names" style="font-size:<?= badge_name_size($s['lines']) ?>">
+          <?php foreach ($s['lines'] as $line): ?><li><?= h($line) ?></li><?php endforeach; ?>
+        </ul>
+        <p class="meta"><?= h(cfg('event_name')) ?> · Tisch <?= h($s['unit']) ?> · <?= h(plural($s['seats'], 'Platz', 'Plätze')) ?> reserviert</p>
+      <?php else: ?>
+        <p class="meta"><?= h(cfg('event_name')) ?> · Tisch <?= h($s['unit']) ?></p>
+      <?php endif; ?>
     </section>
   <?php endforeach; ?>
 

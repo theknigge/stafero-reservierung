@@ -49,6 +49,10 @@ function db(): PDO
             PRIMARY KEY (reservation_id, unit)
         );
         CREATE INDEX IF NOT EXISTS reservation_seats_unit ON reservation_seats(unit);
+        CREATE TABLE IF NOT EXISTS blocked_units (
+            unit       TEXT PRIMARY KEY,          -- vom Admin gesperrter Tisch, z. B. "A1"
+            created_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS failed_attempts (
             ip TEXT NOT NULL,
             at INTEGER NOT NULL
@@ -110,12 +114,52 @@ function db_attach(PDO $pdo, array $rows): array
     return array_values($byId);
 }
 
-/** Belegte Plätze je Tisch ohne die Reservierung $exceptId: ['A1' => 4, 'B2' => 2, ...] */
+/** Belegte Plätze je Tisch ohne die Reservierung $exceptId: ['A1' => 4, 'B2' => 2, ...]. Gesperrte Tische zählen als voll. */
 function db_taken_seats(PDO $pdo, ?int $exceptId = null): array
 {
     $st = $pdo->prepare('SELECT unit, SUM(count) FROM reservation_seats WHERE reservation_id != ? GROUP BY unit');
     $st->execute([$exceptId ?? 0]);
-    return array_map('intval', $st->fetchAll(PDO::FETCH_KEY_PAIR));
+    $taken = array_map('intval', $st->fetchAll(PDO::FETCH_KEY_PAIR));
+    foreach (db_blocked_units($pdo) as $unit) {
+        $taken[$unit] = SEATS_PER_UNIT;
+    }
+    return $taken;
+}
+
+/** Vom Admin gesperrte Tische in Plan-Reihenfolge: ['A1', 'C3', ...] */
+function db_blocked_units(PDO $pdo): array
+{
+    return sort_units($pdo->query('SELECT unit FROM blocked_units')->fetchAll(PDO::FETCH_COLUMN));
+}
+
+/**
+ * Sperrt einen Tisch bzw. gibt ihn wieder frei. Gesperrt werden kann nur ein Tisch ohne Reservierungen.
+ * @return string|null Fehlermeldung oder null
+ */
+function db_toggle_block(PDO $pdo, string $unit): ?string
+{
+    if (!isset(plan_units()[$unit])) {
+        return 'Unbekannter Tisch.';
+    }
+    $pdo->exec('BEGIN IMMEDIATE');
+    try {
+        $st = $pdo->prepare('DELETE FROM blocked_units WHERE unit = ?');
+        $st->execute([$unit]);
+        if ($st->rowCount() === 0) {
+            $st = $pdo->prepare('SELECT COUNT(*) FROM reservation_seats WHERE unit = ?');
+            $st->execute([$unit]);
+            if ((int) $st->fetchColumn() > 0) {
+                $pdo->exec('ROLLBACK');
+                return "Tisch $unit ist schon (teilweise) reserviert und kann nicht gesperrt werden.";
+            }
+            $pdo->prepare('INSERT INTO blocked_units (unit, created_at) VALUES (?, ?)')->execute([$unit, date('Y-m-d H:i:s')]);
+        }
+        $pdo->exec('COMMIT');
+        return null;
+    } catch (Throwable $e) {
+        $pdo->exec('ROLLBACK');
+        throw $e;
+    }
 }
 
 /** Freie Plätze je Tisch (aus Sicht der Reservierung $exceptId). */

@@ -30,6 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         db_delete($pdo, (int) ($_POST['id'] ?? 0));
         $_SESSION['flash'] = 'Reservierung #' . (int) ($_POST['id'] ?? 0) . ' wurde gelöscht.';
         redirect('admin.php');
+    } elseif ($action === 'toggle_block') {
+        $unit = (string) ($_POST['unit'] ?? '');
+        $wasBlocked = in_array($unit, db_blocked_units($pdo), true);
+        $err = db_toggle_block($pdo, $unit);
+        if ($err !== null) {
+            $_SESSION['flash_error'] = $err;
+        } else {
+            $_SESSION['flash'] = $wasBlocked ? "Tisch $unit ist wieder frei." : "Tisch $unit ist gesperrt.";
+        }
+        redirect('admin.php#sperren');
     } elseif ($action === 'logout') {
         unset($_SESSION['admin']);
         redirect('admin.php');
@@ -38,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $isAdmin = !empty($_SESSION['admin']);
 $reservations = $isAdmin ? db_all($pdo) : [];
+$blocked = $isAdmin ? db_blocked_units($pdo) : [];
 
 if ($isAdmin && ($_GET['export'] ?? '') === 'csv') {
     header('Content-Type: text/csv; charset=utf-8');
@@ -60,7 +71,8 @@ if ($isAdmin && in_array($_GET['view'] ?? '', ['badges', 'plan'], true)) {
 }
 
 $flash = $_SESSION['flash'] ?? null;
-unset($_SESSION['flash']);
+$error ??= $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash'], $_SESSION['flash_error']);
 
 page_header('Reservierungen', cfg('event_name') . ' · Verwaltung');
 ?>
@@ -83,6 +95,13 @@ page_header('Reservierungen', cfg('event_name') . ' · Verwaltung');
         $occ[$u] = ['taken' => array_sum(array_column($rows, 'count'))];
         $titles[$u] = "Tisch $u – " . implode('; ', array_map(fn($row) => $row['count'] . '× ' . display_name($row['res']), $rows));
     }
+    foreach ($blocked as $u) {
+        $occ[$u] = ['taken' => SEATS_PER_UNIT, 'blocked' => true];
+        $titles[$u] = "Tisch $u – gesperrt (Klick gibt ihn wieder frei)";
+    }
+    foreach (plan_units() as $u => $_) {
+        $titles[$u] ??= "Tisch $u – frei (Klick sperrt ihn)";
+    }
     $seatCount = array_sum(array_column($reservations, 'seats'));
 ?>
   <?php if ($flash): ?><p class="notice"><?= h($flash) ?></p><?php endif; ?>
@@ -91,7 +110,7 @@ page_header('Reservierungen', cfg('event_name') . ' · Verwaltung');
   <div class="stats">
     <div><strong><?= count($reservations) ?></strong><span>Reservierungen</span></div>
     <div><strong><?= count($byUnit) ?> / <?= count(plan_units()) ?></strong><span>Tische (ganz oder teilweise) belegt</span></div>
-    <div><strong><?= $seatCount ?> / <?= plan_capacity() ?></strong><span>Plätze reserviert</span></div>
+    <div><strong><?= $seatCount ?> / <?= plan_capacity() - count($blocked) * SEATS_PER_UNIT ?></strong><span>Plätze reserviert<?= $blocked ? ' (' . plural(count($blocked), 'Tisch', 'Tische') . ' gesperrt)' : '' ?></span></div>
     <div><strong><?= deadline_label() ?></strong><span>Änderungsschluss<?= is_closed() ? ' (vorbei)' : '' ?></span></div>
   </div>
 
@@ -104,10 +123,28 @@ page_header('Reservierungen', cfg('event_name') . ' · Verwaltung');
   </div>
 
   <div class="admin-grid">
-    <section class="plan-card">
+    <section class="plan-card" id="sperren">
       <h2>Saalplan</h2>
-      <div class="plan"><?= render_plan($occ, false, $titles) ?></div>
-      <?= plan_legend(false) ?>
+      <p class="plan-hint">Klick auf einen freien Tisch sperrt ihn (Gäste sehen ihn als belegt, Schild „Reserviert“).
+        Klick auf einen gesperrten Tisch gibt ihn wieder frei.</p>
+      <form id="block-form" method="post" action="admin.php">
+        <?= csrf_field() ?><input type="hidden" name="action" value="toggle_block"><input type="hidden" name="unit" value="">
+        <div class="plan admin-plan"><?= render_plan($occ, false, $titles) ?></div>
+      </form>
+      <ul class="legend">
+        <li><span class="sw sw-free"></span>frei</li><li><span class="sw sw-taken"></span>reserviert</li>
+        <li><span class="sw sw-blocked"></span>gesperrt</li><li class="legend-note">1 Tisch = 4 Plätze</li>
+      </ul>
+      <script>
+        // Klick auf einen Tisch: sperren bzw. freigeben (reservierte Tische lehnt der Server ab)
+        document.querySelectorAll('#block-form .seat').forEach((t) => t.addEventListener('click', () => {
+          const f = document.getElementById('block-form');
+          const blocked = t.classList.contains('is-blocked');
+          if (!blocked && !confirm(`Tisch ${t.dataset.unit} für Gäste sperren?`)) return;
+          f.unit.value = t.dataset.unit;
+          f.submit();
+        }));
+      </script>
     </section>
 
     <section class="plan-card">
@@ -115,9 +152,10 @@ page_header('Reservierungen', cfg('event_name') . ' · Verwaltung');
       <table class="list">
         <thead><tr><th>Tisch</th><th>Plätze</th><th>Reserviert für</th></tr></thead>
         <tbody>
-        <?php foreach (plan_units() as $u => $tid): $rows = $byUnit[$u] ?? []; ?>
-          <tr class="<?= $rows ? '' : 'free' ?>"><td><?= $u ?></td><td><?= $occ[$u]['taken'] ?? 0 ?> / <?= SEATS_PER_UNIT ?></td>
-            <td><?= $rows ? implode('<br>', array_map(fn($row) => $row['count'] . '× ' . h(display_name($row['res'])) . ' <span class="muted">#' . $row['res']['id'] . '</span>', $rows)) : 'frei' ?></td></tr>
+        <?php foreach (plan_units() as $u => $tid): $rows = $byUnit[$u] ?? []; $isBlocked = in_array($u, $blocked, true); ?>
+          <tr class="<?= $rows || $isBlocked ? '' : 'free' ?>"><td><?= $u ?></td><td><?= $occ[$u]['taken'] ?? 0 ?> / <?= SEATS_PER_UNIT ?></td>
+            <td><?= $isBlocked ? '<strong>gesperrt</strong> <span class="muted">(Schild „Reserviert“)</span>'
+                : ($rows ? implode('<br>', array_map(fn($row) => $row['count'] . '× ' . h(display_name($row['res'])) . ' <span class="muted">#' . $row['res']['id'] . '</span>', $rows)) : 'frei') ?></td></tr>
         <?php endforeach; ?>
         </tbody>
       </table>

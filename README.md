@@ -37,9 +37,11 @@ Die Aufteilung steht in `src/layout.php`.
 
 - Kennzahlen, Saalplan mit Namen (Tooltip), Belegung nach Tisch („2× Müller, Vanessa“) und Liste aller
   Reservierungen inkl. Änderungscode; Reservierungen löschen
+- **Tische sperren**: Klick auf einen freien Tisch im Admin-Saalplan nimmt ihn aus dem Kontingent, ein zweiter Klick
+  gibt ihn wieder frei. Gäste sehen gesperrte Tische als belegt; Tische mit Reservierungen lassen sich nicht sperren.
 - **CSV-Export** (Excel-tauglich, Semikolon)
 - **Schilder drucken**: ein A4-Blatt (quer) pro belegtem Tisch mit Tischnummer und allen Gruppen an diesem Tisch,
-  z. B. „2× Müller, Vanessa“ / „2× Mustermann, Max“. Im Druckdialog die Ränder auf „Keine“ stellen und
+  z. B. „2× Müller, Vanessa“ / „2× Mustermann, Max“. Gesperrte Tische bekommen ein Schild nur mit „Reserviert“ und Tischnummer. Im Druckdialog die Ränder auf „Keine“ stellen und
   Hintergrundgrafiken einschalten.
 - **Saalplan mit Tischnummern** als Druckansicht (A4 hoch)
 

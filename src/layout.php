@@ -202,7 +202,8 @@ function auto_assign(int $n, array $free): ?array
 
 /**
  * Rendert den Saalplan als SVG. Jeder Tisch zeigt vier Stühle: grau = belegt, gelb = eure Plätze, weiß = frei.
- * $occ: ['A1' => ['taken' => belegte Plätze anderer Gruppen, 'mine' => eigene Plätze], ...] (fehlend = frei)
+ * $occ: ['A1' => ['taken' => belegte Plätze anderer Gruppen, 'mine' => eigene Plätze, 'blocked' => gesperrt?], ...] (fehlend = frei)
+ *       'blocked' nur in der Admin-Ansicht übergeben – Gäste sehen gesperrte Tische einfach als belegt.
  * $interactive: Tische mit freien Plätzen sind anklickbar (siehe assets/plan.js)
  * $titles: optionale Tooltips je Tisch (z. B. Namen in der Admin-Ansicht)
  */
@@ -212,7 +213,9 @@ function render_plan(array $occ, bool $interactive, array $titles = []): string
         $taken = (int) ($occ[$unit]['taken'] ?? 0);
         $mine = (int) ($occ[$unit]['mine'] ?? 0);
         $free = SEATS_PER_UNIT - $taken - $mine;
+        $blocked = !empty($occ[$unit]['blocked']);
         $state = match (true) {
+            $blocked                 => 'blocked',
             $mine > 0                => 'mine',
             $taken >= SEATS_PER_UNIT => 'taken',
             $taken > 0               => 'partial',
@@ -224,6 +227,7 @@ function render_plan(array $occ, bool $interactive, array $titles = []): string
             $attrs .= sprintf(' role="button" tabindex="0" data-tafel="%s" data-x="%d" data-y="%d"', $g['tafel'], $g['cx'], $g['cy']);
         }
         $title = $titles[$unit] ?? ('Tisch ' . $unit . ' – ' . match (true) {
+            $blocked                  => 'gesperrt',
             $free <= 0 && $mine === 0 => 'belegt',
             $free === SEATS_PER_UNIT  => 'frei',
             default                   => plural($free, 'Platz', 'Plätze') . ' frei',
