@@ -1,0 +1,14 @@
+# Nur für die lokale Entwicklung.
+#   docker compose up --build   →   http://localhost:8088   (Admin: /admin.php, Passwort "test")
+services:
+  app:
+    build: .
+    ports: ["8088:80"]
+    environment:
+      ADMIN_PASSWORD: test
+      APP_URL: http://localhost:8088
+      DEADLINE: ${DEADLINE:-2026-11-08 23:59:59}
+    volumes:
+      - ./data:/data
+      - ./src:/var/www/app/src
+      - ./public:/var/www/app/public

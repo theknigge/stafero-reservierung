@@ -1,0 +1,153 @@
+/* STAFERO-Design, angelehnt an static.stafero.de/film */
+@font-face { font-family:'Luckiest Guy'; font-weight:400; font-display:swap; src:url(fonts/luckiest-guy.woff2) format('woff2'); }
+@font-face { font-family:'Montserrat'; font-weight:100 900; font-display:swap; src:url(fonts/montserrat.woff2) format('woff2'); }
+
+:root {
+  --yellow:#ffed00; --yellow-soft:#fff7a6; --black:#000; --white:#fff;
+  --grey:#616161; --grey-light:#bdbdbd; --grey-pale:#e6e6e6; --err:#d32f2f;
+}
+* { box-sizing:border-box; }
+html { background:var(--black); }
+body { margin:0; background:var(--black); color:var(--white); font:16px/1.6 Montserrat, system-ui, sans-serif; }
+a { color:inherit; }
+
+.site-header { background:var(--white); text-align:center; padding:8px 16px 4px; }
+.site-header img { width:min(240px, 60vw); height:auto; display:inline-block; }
+
+.hero { background:var(--yellow); color:var(--black); text-align:center; padding:28px 16px 24px; }
+.hero h1 { font-family:'Luckiest Guy', system-ui, sans-serif; font-weight:400;
+           font-size:clamp(2rem, 6vw, 3.2rem); line-height:1.15; margin:0; }
+.hero p { margin:10px 0 0; font-size:1.1rem; }
+
+main { max-width:1100px; margin:0 auto; padding:40px 16px 56px; }
+h2 { font-family:'Luckiest Guy', system-ui, sans-serif; font-weight:400; font-size:1.6rem; line-height:1.2; margin:0 0 12px; }
+
+.intro { max-width:620px; margin:0 auto 28px; }
+.intro > p { text-align:center; font-size:1.1rem; }
+.intro strong { color:var(--yellow); }
+.rules { margin:0; padding-left:1.2em; }
+.rules li { margin:6px 0; }
+.rules li::marker { color:var(--yellow); }
+
+.notice { background:var(--yellow); color:var(--black); font-weight:600; padding:12px 16px; margin:0 0 24px; text-align:center; }
+.notice.error-notice { background:var(--err); color:var(--white); }
+
+/* Karten & Formulare */
+.card { background:var(--white); color:var(--black); padding:28px 24px; border-top:6px solid var(--yellow); }
+.card.narrow { max-width:460px; margin:0 auto; }
+.card h2 { margin-bottom:8px; }
+.card a { color:var(--black); }
+label { display:block; font-weight:600; margin:14px 0 6px; }
+label .optional { font-weight:400; color:var(--grey); font-size:.85rem; }
+input { width:100%; padding:12px 14px; font:inherit; border:2px solid var(--black); border-radius:0; background:var(--white); color:var(--black); }
+input:focus { outline:3px solid var(--yellow); outline-offset:0; }
+button, .btn { display:inline-block; text-decoration:none; text-align:center; margin-top:22px; width:100%; padding:14px 24px;
+  font:500 1.0625rem/1.2 Montserrat, sans-serif; border:2px solid var(--black); border-radius:0;
+  background:var(--black); color:var(--white); cursor:pointer; transition:background .15s, color .15s; }
+button:hover, button:focus-visible, .btn:hover, .btn:focus-visible { background:var(--yellow); color:var(--black); }
+button.secondary { background:transparent; color:var(--white); border-color:var(--white); margin-top:12px; }
+button.secondary:hover, button.secondary:focus-visible { background:var(--yellow); color:var(--black); border-color:var(--yellow); }
+button.danger:hover, button.danger:focus-visible { background:var(--err); color:var(--white); border-color:var(--err); }
+button.link { background:none; border:0; padding:8px 0; width:auto; margin-top:8px; color:var(--grey-light); text-decoration:underline; font-size:.95rem; }
+button.link:hover, button.link:focus-visible { background:none; color:var(--yellow); }
+button.link.danger { color:var(--err); margin:0; padding:0; }
+.center { text-align:center; }
+
+.error { color:var(--err); font-weight:600; margin:16px 0 0; }
+.hint { color:var(--grey); font-size:.85rem; margin:12px 0 0; }
+.who { margin:0 0 6px; font-size:.85rem; color:var(--grey); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+.summary { background:var(--yellow-soft); border-left:6px solid var(--yellow); padding:10px 14px; margin:8px 0 4px; }
+.quota { margin:8px 0 4px; }
+.counter { margin:4px 0 0; font-weight:600; }
+.counter.is-over { color:var(--err); }
+.counter.is-ok { color:#2e7d32; }
+.seat-row { display:flex; gap:8px; }
+.seat-row input { flex:1; min-width:0; }
+.seat-row button { width:auto; margin:0; padding:12px 16px; white-space:nowrap; font-size:.95rem; }
+.name-row { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.card.login { margin-top:20px; padding:20px 24px; }
+.card.login label { margin-top:0; }
+
+/* Reservierungsansicht: Plan + Seitenleiste */
+.booking { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(300px, 1fr); gap:24px; align-items:start; }
+.side { position:sticky; top:16px; }
+.actions { display:flex; flex-direction:column; align-items:stretch; }
+.actions form { margin:0; }
+.actions .link { align-self:center; }
+
+.plan-card { background:var(--white); color:var(--black); padding:20px; border-top:6px solid var(--yellow); }
+.plan-card.overview { max-width:640px; margin:40px auto 0; }
+.plan-hint { margin:0 0 10px; font-size:.95rem; }
+.plan svg { display:block; width:100%; height:auto; }
+
+/* Saalplan (SVG) */
+.plan .wall { fill:var(--white); stroke:var(--black); stroke-width:4; }
+.plan .door-gap { stroke:var(--white); stroke-width:8; }
+.plan .door { font:600 20px Montserrat, sans-serif; fill:var(--grey); text-anchor:middle; dominant-baseline:central; }
+.plan .stage { fill:var(--grey); }
+.plan .stage-label { font:400 30px 'Luckiest Guy', sans-serif; fill:var(--white); text-anchor:middle; dominant-baseline:central; }
+.plan .tafel { font:400 34px 'Luckiest Guy', sans-serif; fill:var(--grey); text-anchor:middle; dominant-baseline:central; }
+.plan .seat rect { fill:var(--white); stroke:var(--black); stroke-width:2.5; transition:fill .12s; }
+.plan .seat text { font:700 19px Montserrat, sans-serif; fill:var(--black); text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+.plan .seat.is-taken rect { fill:var(--grey-light); stroke:var(--grey); }
+.plan .seat.is-taken text { fill:var(--grey); font-weight:500; }
+.plan .seat.is-partial rect { fill:var(--grey-pale); }
+.plan .seat.is-mine rect { fill:var(--white); stroke:var(--black); stroke-width:5; }
+.plan .chair { stroke:var(--black); stroke-width:1.5; pointer-events:none; }
+.plan .chair.is-free { fill:var(--white); }
+.plan .chair.is-taken { fill:var(--grey); stroke:var(--grey); }
+.plan .chair.is-mine { fill:var(--yellow); stroke-width:2; }
+.plan .seat[role=button] { cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent; }
+.plan .seat[role=button]:hover rect { fill:var(--yellow); }
+.plan .seat[role=button]:focus-visible rect { stroke:var(--err); stroke-width:5; }
+
+.legend { list-style:none; display:flex; flex-wrap:wrap; gap:6px 18px; margin:14px 0 0; padding:0; font-size:.9rem; }
+.legend li { display:flex; align-items:center; gap:6px; }
+.legend .sw { width:18px; height:18px; border:2px solid var(--black); display:inline-block; }
+.legend .sw-free { background:var(--white); }
+.legend .sw { border-radius:50%; }
+.legend .sw-mine { background:var(--yellow); }
+.legend .sw-taken { background:var(--grey); border-color:var(--grey); }
+.legend .legend-note { color:var(--grey); margin-left:auto; }
+
+/* Admin */
+main.wide { max-width:1300px; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px; }
+.stats div { background:var(--white); color:var(--black); border-top:6px solid var(--yellow); padding:14px 16px; }
+.stats strong { display:block; font-size:1.5rem; }
+.stats span { color:var(--grey); font-size:.9rem; }
+.toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:24px; }
+.toolbar form { margin:0; }
+.toolbar .btn, .toolbar button { width:auto; margin:0; padding:10px 18px; font-size:.95rem; background:var(--white); color:var(--black); }
+.admin-grid { display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr); gap:24px; margin-bottom:24px; align-items:start; }
+.admin-grid .plan-card:last-child { max-height:1100px; overflow:auto; }
+.table-scroll { overflow-x:auto; }
+table.list { width:100%; border-collapse:collapse; font-size:.92rem; }
+table.list th, table.list td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--grey-pale); vertical-align:top; }
+table.list th { border-bottom:2px solid var(--black); }
+table.list tr.free td { color:var(--grey-light); }
+.muted { color:var(--grey); font-size:.85em; }
+
+.site-footer { border-top:4px solid var(--yellow); padding:20px 16px 28px; text-align:center; font-size:.85rem; color:var(--grey-light); }
+.site-footer p { margin:0 0 10px; }
+.site-footer a { margin:0 10px; text-decoration:none; }
+.site-footer a.mail { margin:0; color:var(--yellow); }
+.site-footer a:hover { color:var(--yellow); }
+
+@media (max-width: 860px) {
+  .booking, .admin-grid { grid-template-columns:1fr; }
+  .side { position:static; order:-1; }
+  .card { padding:22px 18px; }
+  .plan-card { padding:14px; }
+}
+
+@media print {
+  html, body { background:var(--white); color:var(--black); }
+  .site-header, .site-footer, .actions, .toolbar, #res-form, .login, .no-print, .plan-hint { display:none !important; }
+  .hero { padding:8px; }
+  main { padding:12px 0; }
+  .booking, .admin-grid { grid-template-columns:1fr; }
+  .plan-card, .card { border:1px solid var(--black); break-inside:avoid; }
+  .plan svg { max-height:80vh; }
+  .stats div { border:1px solid var(--black); }
+}
