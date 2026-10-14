@@ -4,15 +4,12 @@ require __DIR__ . '/../src/actions.php';
 
 $pdo = db();
 $error = null;
-$loginError = null;
-$codeInput = '';
 $form = null; // Formularzustand nach "Vorschlagen" oder einem Fehler beim Speichern
 
-// Persönlicher Link aus Bestätigung/Mail: ?code=K7M2QX
+// Bestehende Reservierungen lassen sich nur über den persönlichen Link aus der Bestätigungsmail öffnen: ?code=K7M2QX
 if (isset($_GET['code']) && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    $codeInput = (string) $_GET['code'];
-    $loginError = action_login($pdo, $codeInput);
-    if ($loginError === null) {
+    $error = action_login($pdo, (string) $_GET['code']);
+    if ($error === null) {
         redirect('./#top');
     }
 }
@@ -21,12 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
     if (!csrf_check()) {
         $error = 'Die Sitzung ist abgelaufen. Bitte versucht es noch einmal.';
-    } elseif ($action === 'login') {
-        $codeInput = trim((string) ($_POST['code'] ?? ''));
-        $loginError = action_login($pdo, $codeInput);
-        if ($loginError === null) {
-            redirect('./#top');
-        }
     } elseif ($action === 'propose' || $action === 'save') {
         $form = [
             'seats'      => (int) ($_POST['seats'] ?? 0),
@@ -103,14 +94,14 @@ page_header('Tischreservierung', cfg('event_name'));
   <div class="intro">
     <?php if ($closed): ?>
       <p>Der Reservierungszeitraum ist am <strong><?= deadline_label() ?></strong> zu Ende gegangen.
-        Eure bestehende Reservierung könnt ihr mit eurem Änderungscode weiterhin ansehen.</p>
+        Eure bestehende Reservierung könnt ihr über den Link in eurer Bestätigungsmail weiterhin ansehen.</p>
     <?php else: ?>
       <p>Reserviert euch eure Plätze für den <strong><?= h(cfg('event_name')) ?></strong>!</p>
       <ul class="rules">
         <li>Gebt ein, wie viele Plätze ihr braucht (<strong><?= MIN_SEATS ?> bis <?= cfg('max_seats') ?></strong>). Wir schlagen euch
           nebeneinanderliegende Plätze vor, die ihr im Saalplan noch ändern könnt.</li>
         <li>An jedem Tisch sitzen <strong>4 Personen</strong>. Ein Tisch kann auch mit einer anderen Gruppe geteilt werden.</li>
-        <li>Nach dem Reservieren bekommt ihr einen <strong>Änderungscode</strong>. Damit könnt ihr bis zum <strong><?= deadline_label() ?></strong> alles ändern oder stornieren.</li>
+        <li>Nach dem Reservieren bekommt ihr eine <strong>Bestätigungsmail mit persönlichem Link</strong>. Darüber könnt ihr bis zum <strong><?= deadline_label() ?></strong> alles ändern oder stornieren.</li>
       </ul>
     <?php endif; ?>
   </div>
@@ -127,7 +118,7 @@ page_header('Tischreservierung', cfg('event_name'));
     <aside class="side">
       <div class="card">
         <?php if ($res): ?>
-          <p class="who">Änderungscode <?= h($res['code']) ?></p>
+          <p class="who">Reservierung #<?= $res['id'] ?></p>
           <h2>Eure Reservierung</h2>
           <p class="summary">
             <strong><?= h(display_name($res)) ?></strong> · <?= h(plural($res['seats'], 'Platz', 'Plätze')) ?><br>
@@ -198,16 +189,7 @@ page_header('Tischreservierung', cfg('event_name'));
             <button type="submit" class="link">Schließen</button>
           </form>
         <?php else: ?>
-          <form class="card login" method="post" action="./">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="login">
-            <label for="code">Schon reserviert? Änderungscode eingeben</label>
-            <div class="seat-row">
-              <input id="code" name="code" value="<?= h($codeInput) ?>" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="z. B. K7M2QX">
-              <button type="submit" class="dark">Öffnen</button>
-            </div>
-            <?php if ($loginError): ?><p class="error" role="alert"><?= h($loginError) ?></p><?php endif; ?>
-          </form>
+          <p class="side-note">Schon reserviert? Zum Ändern oder Stornieren nutzt bitte den Link aus eurer Bestätigungsmail.</p>
         <?php endif; ?>
       </div>
     </aside>

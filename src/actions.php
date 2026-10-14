@@ -1,8 +1,8 @@
 <?php
 // Formular-Aktionen der Gästeseite. Jede Funktion gibt null (Erfolg) oder eine Fehlermeldung zurück.
 //
-// Reservieren kann jeder ohne Anmeldung. Wer reserviert hat, bekommt einen Änderungscode (und einen Link damit);
-// mit dem Code lässt sich die Reservierung später ändern oder stornieren.
+// Reservieren kann jeder ohne Anmeldung. Wer reserviert hat, bekommt per Mail einen persönlichen Link (?code=…);
+// nur darüber lässt sich die Reservierung später öffnen, ändern oder stornieren – ein öffentliches Codefeld gibt es nicht.
 // Session: $_SESSION['res_id'] = geöffnete Reservierung.
 
 function msg_closed(): string
@@ -26,7 +26,8 @@ function action_login(PDO $pdo, string $raw): ?string
     $res = $code !== '' ? db_find_by_code($pdo, $code) : null;
     if (!$res) {
         db_register_fail($pdo, client_ip());
-        return 'Diesen Änderungscode kennen wir nicht. Ihr findet ihn in eurer Bestätigung (z. B. „K7M2QX“).';
+        return 'Dieser Link ist ungültig oder die Reservierung wurde storniert. Bitte nutzt den Link aus eurer letzten Bestätigungsmail '
+            . 'oder schreibt uns an ' . cfg('contact_email') . '.';
     }
     session_regenerate_id(true);
     $_SESSION['res_id'] = $res['id'];
@@ -131,11 +132,13 @@ function action_save(PDO $pdo, array &$form): ?string
     $isNew = $resId === null;
     $_SESSION['res_id'] = $id;
     $res = db_get_reservation($pdo, $id);
-    $_SESSION['flash'] = $isNew
-        ? 'Eure Reservierung ist gespeichert. Euer Änderungscode lautet ' . $res['code'] . ' – bitte notiert ihn euch!'
-        : 'Eure Änderungen sind gespeichert.';
+    $_SESSION['flash'] = $isNew ? 'Eure Reservierung ist gespeichert.' : 'Eure Änderungen sind gespeichert.';
     if (send_reservation_mail($res, $isNew ? 'created' : 'changed')) {
-        $_SESSION['flash'] .= ' Eine Bestätigung haben wir an ' . $email . ' geschickt.';
+        $_SESSION['flash'] .= ' Die Bestätigung mit eurem persönlichen Link zum Ändern haben wir an ' . $email . ' geschickt.';
+    } else {
+        // Ohne Mail gäbe es sonst keinen Weg zurück zur Reservierung
+        $_SESSION['flash'] .= ' Die Bestätigungsmail konnte leider nicht verschickt werden – bitte speichert euch den Link unten, '
+            . 'nur darüber könnt ihr die Reservierung später ändern.';
     }
     return null;
 }

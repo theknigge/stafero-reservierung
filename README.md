@@ -12,8 +12,9 @@ Design wie [static.stafero.de/film](https://static.stafero.de/film/).
   automatisch auf möglichst wenige, nebeneinanderliegende Tische (bevorzugt an derselben Tafel, angebrochene Tische
   werden zuerst aufgefüllt). Ein Klick auf einen Tisch setzt die ganze Gruppe dorthin (bei mehr als 4 Personen
   inkl. Nachbartischen), eine geänderte Anzahl wird sofort neu verteilt – alles ohne Neuladen. Danach geben sie Vorname, Nachname, Telefonnummer und E-Mail-Adresse ein (alles Pflichtfelder).
-- Nach dem Speichern bekommt jede Reservierung einen **Änderungscode** (6 Zeichen) und einen persönlichen Link
-  (`/?code=…`). Er wird auf der Seite, in der Bestätigung und in der Mail angezeigt. Damit lässt sich die Reservierung
+- Nach dem Speichern bekommt jede Reservierung einen persönlichen Link (`/?code=…`, 6-stelliger Code), der in der
+  Bestätigungsmail steht. **Nur** über diesen Link lässt sich eine Reservierung wieder öffnen – ein öffentliches Feld
+  für den Code gibt es nicht. Ungültige Links werden wie Fehlversuche gezählt (max. 20 in 15 Minuten). Darüber lässt sich die Reservierung
   bis `DEADLINE` (Standard: 08.11.2026, 23:59 Uhr) ändern oder stornieren, danach nur noch ansehen.
 - Gleichzeitige Buchungen: Der Vorschlag reserviert noch nichts. Beim Speichern prüft `db_save()` die freien Plätze in
   einer exklusiven SQLite-Transaktion (`BEGIN IMMEDIATE`), eine zweite Buchung wartet so lange. War jemand schneller,
@@ -47,7 +48,7 @@ Die Aufteilung steht in `src/layout.php`.
 
 ## Bestätigungsmails
 
-Die E-Mail-Adresse ist Pflicht. Beim Anlegen, Ändern und Stornieren geht eine Bestätigung mit Änderungscode und Link an diese Adresse,
+Die E-Mail-Adresse ist Pflicht. Beim Anlegen, Ändern und Stornieren geht eine Bestätigung mit persönlichem Link an diese Adresse,
 optional mit Kopie an `MAIL_BCC`. Antworten gehen an `CONTACT_EMAIL`. Kann eine Mail nicht verschickt werden, bleibt die
 Reservierung trotzdem gespeichert; der Fehler steht im Container-Log (`mail: Versand an … fehlgeschlagen`).
 Ohne `SMTP_HOST` werden keine Mails verschickt.

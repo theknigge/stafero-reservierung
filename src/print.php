@@ -45,7 +45,7 @@ $title = $view === 'plan' ? 'Saalplan mit Tischnummern' : 'Reservierungsschilder
 <meta name="robots" content="noindex, nofollow">
 <title><?= h($title) ?> – <?= h(cfg('event_name')) ?></title>
 <link rel="icon" href="assets/stafero-logo.png">
-<link rel="stylesheet" href="assets/style.css?v=5">
+<link rel="stylesheet" href="assets/style.css?v=6">
 <style>
   html, body { background:#d9d9d9; color:#000; }
   .print-bar { position:sticky; top:0; z-index:2; background:#000; color:#fff; padding:10px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }

@@ -86,7 +86,7 @@ function reservation_mail(array $res, string $type): array
 
     $rows = $type === 'canceled'
         ? [['Name', display_name($res)], ['Plätze', (string) $res['seats']]]
-        : [['Name', display_name($res)], ['Plätze', (string) $res['seats']], ['Tisch', alloc_label($res['alloc'])], ['Änderungscode', $res['code']]];
+        : [['Name', display_name($res)], ['Plätze', (string) $res['seats']], ['Tisch', alloc_label($res['alloc'])]];
 
     $notice = $type === 'canceled'
         ? ''
@@ -94,7 +94,7 @@ function reservation_mail(array $res, string $type): array
 
     $footer = $type === 'canceled'
         ? "Ihr könnt bis zum $deadline jederzeit neu reservieren:"
-        : "Ändern oder stornieren könnt ihr die Reservierung bis zum $deadline mit eurem Änderungscode oder direkt über diesen Link:";
+        : "Ändern oder stornieren könnt ihr die Reservierung bis zum $deadline über diesen persönlichen Link:";
 
     $text = "Hallo {$first},\n\n$intro\n\n";
     foreach ($rows as [$k, $v]) {

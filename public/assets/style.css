@@ -65,8 +65,7 @@ button.link.danger { color:var(--err); margin:0; padding:0; }
 .seat-row input { flex:1; min-width:0; }
 .seat-row button { width:auto; margin:0; padding:12px 16px; white-space:nowrap; font-size:.95rem; }
 .name-row { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
-.card.login { margin-top:20px; padding:20px 24px; }
-.card.login label { margin-top:0; }
+.side-note { color:var(--grey-light); font-size:.9rem; margin:16px 0 0; }
 
 /* Reservierungsansicht: Plan + Seitenleiste */
 .booking { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(300px, 1fr); gap:24px; align-items:start; }
@@ -149,7 +148,7 @@ table.list tr.free td { color:var(--grey-light); }
 
 @media print {
   html, body { background:var(--white); color:var(--black); }
-  .site-header, .site-footer, .actions, .toolbar, #res-form, .login, .no-print, .plan-hint { display:none !important; }
+  .site-header, .site-footer, .actions, .toolbar, #res-form, .no-print, .plan-hint { display:none !important; }
   .hero { padding:8px; }
   main { padding:12px 0; }
   .booking, .admin-grid { grid-template-columns:1fr; }
